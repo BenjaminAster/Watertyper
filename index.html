@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="color-scheme" content="dark light" />
+	<meta name="description" content="A typing test" />
+
+	<title>Watertyper</title>
+
+	<style>
+		body {
+			font-family: system-ui;
+			box-sizing: border-box;
+			min-block-size: 100vh;
+			margin: 0;
+		}
+
+		main {
+			padding: 2rem;
+			font: 2rem monospace;
+			white-space: pre-wrap;
+		}
+
+		main::highlight(correct) {
+			color: limeGreen;
+		}
+
+		main::highlight(incorrect) {
+			color: red;
+		}
+
+		main::highlight(cursor) {
+			background-color: CanvasText;
+			color: Canvas;
+		}
+
+	</style>
+
+	<script type="module">
+		let /** @type {string[]} */ words = (await(await window.fetch("https://gist.githubusercontent.com/deekayen/4148741/raw/98d35708fa344717d8eee15d11987de6c8e26d7d/1-1000.txt")).text()).split("\n");
+		const /** @type {HTMLElement} */ main = document.querySelector("main");
+		let /** @type {Function} */ newGame;
+		const /** @type {number} */ wordCount = 60;
+
+		const setCursor = () => {
+			let cursorRange = new Range();
+			cursorRange.setStart(main.firstChild, index);
+			cursorRange.setEnd(main.firstChild, index + 1);
+			CSS.highlights.set("cursor", new Highlight(cursorRange));
+		}
+
+		window.addEventListener("keydown", ({ key }) => {
+			if (key === "Backspace" && index > 0) {
+				ranges.pop();
+				index--;
+			} else if (key.match(/^[a-z ]$/)) {
+				let range = new Range();
+				range.setStart(main.firstChild, index);
+				range.setEnd(main.firstChild, index + 1);
+				ranges.push({ range, correct: key === string[index] });
+				index++;
+			} else return;
+
+			CSS.highlights.set("correct", new Highlight(...ranges.filter(({ correct }) => correct).map(({ range }) => range)));
+			CSS.highlights.set("incorrect", new Highlight(...ranges.filter(({ correct }) => !correct).map(({ range }) => range)));
+			setCursor();
+
+			if (index >= string.length) {
+				console.log("hi");
+			}
+		});
+
+		while (true) {
+			for (let i = words.length - 1; i > 0; i--) (j => [words[i], words[j]] = [words[j], words[i]])(Math.random() * (i + 1) | 0);
+			var /** @type {string} */ string = words.slice(0, wordCount).join(" ");
+			var /** @type {number} */ index = 0;
+			var /** @type {Range[]} */ ranges = [];
+			main.textContent = string;
+			setCursor();
+			await new Promise((resolve) => newGame = resolve);
+		}
+	</script>
+</head>
+
+<body>
+	<main></main>
+</body>
+
+</html>

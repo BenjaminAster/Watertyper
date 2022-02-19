@@ -5,11 +5,18 @@
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<meta name="color-scheme" content="dark light" />
-	<meta name="description" content="A typing test" />
+	<meta name="description" content="A minimalistic typing test" />
+
+	<link rel="icon"
+		href="data:image/svg+xml,<svg viewBox='2 -15 19 19' xmlns='http://www.w3.org/2000/svg'><text>💧</text></svg>" />
 
 	<title>Watertyper</title>
 
 	<style>
+		:root {
+			scrollbar-color: #8884 transparent;
+		}
+
 		body {
 			font-family: system-ui;
 			box-sizing: border-box;
@@ -19,73 +26,102 @@
 
 		main {
 			padding: 2rem;
-			font: 2rem monospace;
-			white-space: pre-wrap;
+			font-size: 2rem;
 		}
 
-		main::highlight(correct) {
+		.textfield {
+			letter-spacing: .1em;
+			line-height: 1.5em;
+		}
+
+		.textfield [data-correct="true"] {
 			color: limeGreen;
 		}
 
-		main::highlight(incorrect) {
+		.textfield [data-correct="false"] {
 			color: red;
 		}
 
-		main::highlight(cursor) {
+		.textfield .space[data-correct="false"] {
+			text-decoration: underline;
+		}
+
+		.textfield [data-correct="false"]:empty {
+			text-decoration: underline;
+			background-color: red;
+		}
+
+		.cursor {
+			position: absolute;
 			background-color: CanvasText;
-			color: Canvas;
+			inline-size: 2px;
+			block-size: 1.3em;
+			transform: translateX(-2px);
+			transition: inset .1s;
+		}
+
+		.score {
+			padding-block: .5rem;
+			font-size: 1.2rem;
+		}
+
+		.score :is(h3, p) {
+			margin-block: 0;
+			font-size: inherit;
+		}
+
+		.score button {
+			display: block;
+			inline-size: fit-content;
+			padding: .3em .6em;
+			margin-block: .3rem;
+			color: white;
+			background-color: blueViolet;
+			cursor: pointer;
+			border: none;
+			border-radius: .4em;
+			font-family: inherit;
+			font-size: inherit;
+			outline-offset: 2px;
+		}
+
+		.score button:hover {
+			opacity: 80%;
 		}
 
 	</style>
 
 	<script type="module">
 		let /** @type {string[]} */ words = (await(await window.fetch("https://gist.githubusercontent.com/deekayen/4148741/raw/98d35708fa344717d8eee15d11987de6c8e26d7d/1-1000.txt")).text()).split("\n");
-		const /** @type {HTMLElement} */ main = document.querySelector("main");
-		let /** @type {Function} */ newGame;
-		const /** @type {number} */ wordCount = 60;
-
-		const setCursor = () => {
-			let cursorRange = new Range();
-			cursorRange.setStart(main.firstChild, index);
-			cursorRange.setEnd(main.firstChild, index + 1);
-			CSS.highlights.set("cursor", new Highlight(cursorRange));
-		}
-
+		const setCursor = window.onresize = () => $(".cursor").style.inset = `${$(".textfield").children[index]?.offsetTop}px auto auto ${$(".textfield").children[index]?.offsetLeft}px`;
 		window.addEventListener("keydown", ({ key }) => {
-			if (key === "Backspace" && index > 0) {
-				ranges.pop();
-				index--;
-			} else if (key.match(/^[a-z ]$/)) {
-				let range = new Range();
-				range.setStart(main.firstChild, index);
-				range.setEnd(main.firstChild, index + 1);
-				ranges.push({ range, correct: key === string[index] });
-				index++;
-			} else return;
-
-			CSS.highlights.set("correct", new Highlight(...ranges.filter(({ correct }) => correct).map(({ range }) => range)));
-			CSS.highlights.set("incorrect", new Highlight(...ranges.filter(({ correct }) => !correct).map(({ range }) => range)));
-			setCursor();
-
-			if (index >= string.length) {
-				console.log("hi");
-			}
+			if (key === "Backspace" && index > 0) ($(".textfield").children[--index]?.removeAttribute("data-correct"), setCursor());
+			else if (key.match(/^[a-z' ]$/)) ($(".textfield").children[index]?.setAttribute("data-correct", string[index++] === key), setCursor(), startTime < 0 && (startTime = performance.now()));
+			if (index === string.length - 1) ($(".wpm").textContent = Math.round(wordCount / ((performance.now() - startTime) / 1000 / 60)), $(".score").hidden = false, $(".restart").onclick = newGame);
 		});
-
 		while (true) {
 			for (let i = words.length - 1; i > 0; i--) (j => [words[i], words[j]] = [words[j], words[i]])(Math.random() * (i + 1) | 0);
-			var /** @type {string} */ string = words.slice(0, wordCount).join(" ");
-			var /** @type {number} */ index = 0;
-			var /** @type {Range[]} */ ranges = [];
-			main.textContent = string;
-			setCursor();
-			await new Promise((resolve) => newGame = resolve);
+			var wordCount = 40, string = words.slice(0, wordCount).join(" ") + " ", index = 0, startTime = -1, newGame, $ = document.querySelector.bind(document);
+			for (const letter of string) (span => (span.textContent = letter, letter === " " && span.classList.add("space"), $(".textfield").appendChild(span)))(document.createElement("span"));
+			await new Promise((resolve) => (setCursor(), $(".score").hidden = true, newGame = () => (resolve(), $(".textfield").textContent = "")));
 		}
 	</script>
 </head>
 
 <body>
-	<main></main>
+	<main>
+		<div class="cursor"></div>
+
+		<div class="textfield"></div>
+
+		<div class="score" hidden>
+			<h3>Score:</h3>
+
+			<p>Words per minute: <span class="wpm"></span></p>
+
+			<button class="restart">Restart</button>
+		</div>
+	</main>
 </body>
 
 </html>
